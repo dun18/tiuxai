@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>Bot Dự Đoán Tài Xỉu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+
+<style>
+/* ================= KEY POPUP ================= */
+#keyOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(8px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+}
+#keyBox{
+  width:320px;
+  padding:30px;
+  border-radius:16px;
+  background:rgba(10,30,50,.95);
+  box-shadow:0 0 30px rgba(0,255,255,.4);
+  text-align:center;
+  animation:fadeIn .4s ease;
+}
+#keyBox h3{
+  color:#00ffff;
+  margin-bottom:20px;
+}
+#keyInput{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  outline:none;
+  font-size:16px;
+  text-align:center;
+}
+#keyBtn{
+  margin-top:15px;
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00ffff,#0088ff);
+}
+#keyMsg{
+  margin-top:10px;
+  font-size:14px;
+  min-height:18px;
+}
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-5px)}
+  50%{transform:translateX(5px)}
+  75%{transform:translateX(-5px)}
+  100%{transform:translateX(0)}
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:scale(.9)}
+  to{opacity:1;transform:scale(1)}
+}
+/* ================= END KEY POPUP ================= */
+
+/* ====== PHẦN CSS GỐC CỦA BẠN (GIỮ NGUYÊN) ====== */
+/* (vì quá dài nên bạn giữ nguyên CSS gốc ở đây, 
+   KHÔNG cần sửa gì thêm) */
+</style>
+</head>
+
+<body>
+
+<!-- ================= KEY POPUP ================= -->
+<div id="keyOverlay">
+  <div id="keyBox">
+    <h3>🔐 Nhập Key Truy Cập</h3>
+    <input id="keyInput" type="password" placeholder="Nhập key..." />
+    <button id="keyBtn">Xác nhận</button>
+    <div id="keyMsg"></div>
+  </div>
+</div>
+<!-- ================= END KEY POPUP ================= -->
+
+<!-- ====== PHẦN HTML GỐC CỦA BẠN (gameSelect, iframe, robot...) ====== -->
+<!-- 👉 GIỮ NGUYÊN TOÀN BỘ HTML GỐC Ở ĐÂY -->
+
+
+<script>
+/* ================= KEY SYSTEM ================= */
+const KEY_HASH =
+"a9b7e9b6d5d1c7c0b0c4e9f2c1c6c6d61b3f4f8b7c5c9f3e5e6d9a3c4b2a1";
+
+const keyOverlay = document.getElementById("keyOverlay");
+const keyInput   = document.getElementById("keyInput");
+const keyBtn     = document.getElementById("keyBtn");
+const keyMsg     = document.getElementById("keyMsg");
+
+let failCount = 0;
+
+// Ẩn trang chính ban đầu
+document.getElementById("gameSelect").style.display = "none";
+
+// Nếu đã xác thực trước đó
+if(localStorage.getItem("access_granted")==="1"){
+  keyOverlay.style.display="none";
+  document.getElementById("gameSelect").style.display="flex";
+}
+
+keyBtn.onclick = checkKey;
+keyInput.onkeydown = e => { if(e.key==="Enter") checkKey(); };
+
+async function sha256(text){
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function checkKey(){
+  const input = keyInput.value.trim();
+  const hash  = await sha256(input);
+
+  if(hash === KEY_HASH){
+    localStorage.setItem("access_granted","1");
+    keyMsg.style.color="#00ff99";
+    keyMsg.textContent="✔ Xác thực thành công";
+    setTimeout(()=>{
+      keyOverlay.style.display="none";
+      document.getElementById("gameSelect").style.display="flex";
+    },500);
+  }else{
+    failAttempt();
+  }
+}
+
+function failAttempt(){
+  failCount++;
+  keyMsg.style.color="#ff6666";
+  keyMsg.textContent=`❌ Sai key (${failCount}/5)`;
+  keyOverlay.style.animation="shake .4s";
+  setTimeout(()=>keyOverlay.style.animation="",400);
+
+  if(failCount>=5){
+    keyMsg.textContent="⛔ Bị khóa 30 giây";
+    keyInput.disabled=true;
+    keyBtn.disabled=true;
+    setTimeout(()=>{
+      failCount=0;
+      keyInput.disabled=false;
+      keyBtn.disabled=false;
+      keyMsg.textContent="";
+    },30000);
+  }
+}
+/* ================= END KEY SYSTEM ================= */
+
+/* ====== PHẦN JAVASCRIPT GỐC CỦA BẠN ====== */
+/* 👉 DÁN NGUYÊN TOÀN BỘ SCRIPT BOT TÀI XỈU Ở ĐÂY */
+</script>
+
+</body>
+</html>
