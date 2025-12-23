@@ -1,0 +1,311 @@
+duongbuncha01      
+      try {
+        console.log(`Fetching ${originalUrl} via proxy...`);
+        
+        const response = await fetch(proxyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Proxy error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`✓ Data received successfully:`, data);
+        
+        processor(data);
+        retryCount = 0;
+        fetchAttempts = 0;
+        return true;
+
+      } catch (error) {
+        console.error(`✗ Proxy failed:`, error.message);
+        return false;
+      }
+    }
+
+    // Main connection function with proper error handling
+    async function fetchWithParallelConnections(processor) {
+      if (isFetching) return;
+      isFetching = true;
+
+      try {
+        let primaryUrl;
+        let backupApis;
+        
+        if (currentGame === 'b52') {
+          primaryUrl = B52_API;
+          backupApis = B52_BACKUP_APIS;
+        } else if (currentGame === 'game789') {
+          primaryUrl = GAME789_API;
+          backupApis = GAME789_BACKUP_APIS;
+        } else if (currentGame === 'hitclub') {
+          primaryUrl = HITCLUB_API;
+        } else {
+          primaryUrl = SUNWIN_API;
+        }
+        
+        console.log(`=== Connecting to ${currentGame.toUpperCase()} ===`);
+        
+        const success = await fetchDataEnhanced(primaryUrl, processor, false);
+        
+        if (success) {
+          console.log(`✓ ${currentGame.toUpperCase()} connected successfully`);
+          if (statusText && currentGame !== 'sun' && currentGame !== 'game789') {
+            statusText.innerHTML = '<span style="color:#00ff00">●</span> KẾT NỐI THÀNH CÔNG';
+          }
+        } else {
+          console.log(`✗ ${currentGame.toUpperCase()} connection failed`);
+          
+          // Try backup APIs if available
+          if (backupApis && backupApis.length > 0) {
+            let backupSuccess = false;
+            for (let i = 0; i < backupApis.length; i++) {
+              backupSuccess = await fetchDataEnhanced(backupApis[i], processor, true);
+              if (backupSuccess) break;
+            }
+            
+            if (!backupSuccess) {
+              console.log(`All backup APIs failed for ${currentGame}`);
+              if (statusText && currentGame !== 'sun' && currentGame !== 'game789') {
+                statusText.innerHTML = '<span style="color:#ff4444">●</span> KẾT NỐI THẤT BẠI - THỬ LẠI...';
+              }
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error("Connection error:", error.message);
+        if (statusText && currentGame !== 'sun' && currentGame !== 'game789') {
+          statusText.innerHTML = '<span style="color:#ff4444">●</span> LỖI KẾT NỐI';
+        }
+      } finally {
+        isFetching = false;
+      }
+    }
+
+    function startFetching(url, processor) {
+      console.log(`Starting fetching for ${currentGame}`);
+      
+      // Clear any existing intervals
+      if (fetchInterval) clearInterval(fetchInterval);
+      if (connectionBackup) clearInterval(connectionBackup);
+      
+      // Initial immediate fetch
+      fetchWithParallelConnections(processor).catch(error => {
+        console.error("Initial fetch error:", error);
+      });
+      
+      // Set up regular interval
+      const interval = currentGame === 'b52' ? 3000 : 5000; // 3s for B52, 5s for others
+      
+      fetchInterval = setInterval(() => {
+        fetchWithParallelConnections(processor).catch(error => {
+          console.error("Interval fetch error:", error);
+        });
+      }, interval);
+    }
+
+    // Connection maintenance - simplified
+    function maintainConnection() {
+      if (currentGame && !isFetching) {
+        console.log(`Maintaining connection for ${currentGame}`);
+      }
+    }
+
+    // Start connection maintenance
+    setInterval(maintainConnection, 10000);
+
+    // Update clock every second
+    setInterval(() => {
+      if (gameInterface.style.display === "block") {
+        clockText.textContent = formatTime();
+      }
+    }, 1000);
+
+    // Drag and drop for robot
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    robot.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      offsetX = e.clientX - robot.offsetLeft;
+      offsetY = e.clientY - robot.offsetTop;
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        robot.style.left = e.clientX - offsetX + "px";
+        robot.style.top = e.clientY - offsetY + "px";
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    robot.addEventListener("touchstart", (e) => {
+      isDragging = true;
+      const touch = e.touches[0];
+      offsetX = touch.clientX - robot.offsetLeft;
+      offsetY = touch.clientY - robot.offsetTop;
+    });
+
+    document.addEventListener("touchmove", (e) => {
+      if (isDragging) {
+        const touch = e.touches[0];
+        robot.style.left = touch.clientX - offsetX + "px";
+        robot.style.top = touch.clientY - offsetY + "px";
+      }
+    });
+
+    document.addEventListener("touchend", () => {
+      isDragging = false;
+    });
+
+    // Auto-hide back button
+    let hideTimeout;
+    document.addEventListener("mousemove", () => {
+      backButton.style.opacity = "1";
+      clearTimeout(hideTimeout);
+      hideTimeout = setTimeout(() => {
+        backButton.style.opacity = "0.7";
+      }, 2000);
+    });
+  </script>
+</body>
+</html>  border-radius:10px;
+  border:none;
+  outline:none;
+  font-size:16px;
+  text-align:center;
+}
+#keyBtn{
+  margin-top:15px;
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00ffff,#0088ff);
+}
+#keyMsg{
+  margin-top:10px;
+  font-size:14px;
+  min-height:18px;
+}
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-5px)}
+  50%{transform:translateX(5px)}
+  75%{transform:translateX(-5px)}
+  100%{transform:translateX(0)}
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:scale(.9)}
+  to{opacity:1;transform:scale(1)}
+}
+/* ================= END KEY POPUP ================= */
+
+/* ====== PHẦN CSS GỐC CỦA BẠN (GIỮ NGUYÊN) ====== */
+/* (vì quá dài nên bạn giữ nguyên CSS gốc ở đây, 
+   KHÔNG cần sửa gì thêm) */
+</style>
+</head>
+
+<body>
+
+<!-- ================= KEY POPUP ================= -->
+<div id="keyOverlay">
+  <div id="keyBox">
+    <h3>🔐 Nhập Key Truy Cập</h3>
+    <input id="keyInput" type="password" placeholder="Nhập key..." />
+    <button id="keyBtn">Xác nhận</button>
+    <div id="keyMsg"></div>
+  </div>
+</div>
+<!-- ================= END KEY POPUP ================= -->
+
+<!-- ====== PHẦN HTML GỐC CỦA BẠN (gameSelect, iframe, robot...) ====== -->
+<!-- 👉 GIỮ NGUYÊN TOÀN BỘ HTML GỐC Ở ĐÂY -->
+
+
+<script>
+/* ================= KEY SYSTEM ================= */
+const KEY_HASH =
+"a9b7e9b6d5d1c7c0b0c4e9f2c1c6c6d61b3f4f8b7c5c9f3e5e6d9a3c4b2a1";
+
+const keyOverlay = document.getElementById("keyOverlay");
+const keyInput   = document.getElementById("keyInput");
+const keyBtn     = document.getElementById("keyBtn");
+const keyMsg     = document.getElementById("keyMsg");
+
+let failCount = 0;
+
+// Ẩn trang chính ban đầu
+document.getElementById("gameSelect").style.display = "none";
+
+// Nếu đã xác thực trước đó
+if(localStorage.getItem("access_granted")==="1"){
+  keyOverlay.style.display="none";
+  document.getElementById("gameSelect").style.display="flex";
+}
+
+keyBtn.onclick = checkKey;
+keyInput.onkeydown = e => { if(e.key==="Enter") checkKey(); };
+
+async function sha256(text){
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function checkKey(){
+  const input = keyInput.value.trim();
+  const hash  = await sha256(input);
+
+  if(hash === KEY_HASH){
+    localStorage.setItem("access_granted","1");
+    keyMsg.style.color="#00ff99";
+    keyMsg.textContent="✔ Xác thực thành công";
+    setTimeout(()=>{
+      keyOverlay.style.display="none";
+      document.getElementById("gameSelect").style.display="flex";
+    },500);
+  }else{
+    failAttempt();
+  }
+}
+
+function failAttempt(){
+  failCount++;
+  keyMsg.style.color="#ff6666";
+  keyMsg.textContent=`❌ Sai key (${failCount}/5)`;
+  keyOverlay.style.animation="shake .4s";
+  setTimeout(()=>keyOverlay.style.animation="",400);
+
+  if(failCount>=5){
+    keyMsg.textContent="⛔ Bị khóa 30 giây";
+    keyInput.disabled=true;
+    keyBtn.disabled=true;
+    setTimeout(()=>{
+      failCount=0;
+      keyInput.disabled=false;
+      keyBtn.disabled=false;
+      keyMsg.textContent="";
+    },30000);
+  }
+}
+/* ================= END KEY SYSTEM ================= */
+
+/* ====== PHẦN JAVASCRIPT GỐC CỦA BẠN ====== */
+/* 👉 DÁN NGUYÊN TOÀN BỘ SCRIPT BOT TÀI XỈU Ở ĐÂY */
+</script>scribody>
+<bodyl>
+r
